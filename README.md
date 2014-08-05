@@ -1,4 +1,4 @@
-RxUi Design Guidelines
+RxUI Design Guidelines
 ======================
 
 A set of practices to help maintain sanity when building an RxUI client 
@@ -26,11 +26,8 @@ public class RepositoryViewModel : ViewModelBase
 {
   public RepositoryViewModel() 
   {
-    Delete = new ReactiveAsyncCommand();
-    Delete.RegisterAsyncObservable(
-      x => DeleteImpl(),  
-      e => /* Do something with error */)
-    .Subscribe();
+    Delete = ReactiveCommand.CreateAsyncObservable(x => DeleteImpl());
+    Delete.ThrownExceptions.Subscribe(ex => /*...*/);
   }
 
   public ReactiveAsyncCommand Delete { get; private set; }
@@ -55,7 +52,7 @@ public class RepositoryViewModel : PropertyChangedBase
 
 Why? 
 
-1. ReactiveAsyncCommand exposes the `CanExecute` property of the command to 
+1. ReactiveCommand exposes the `CanExecute` property of the command to 
 enable applications to introduce additional behaviour.
 2. It handles marshaling the result back to the UI thread.
 3. It tracks in-flight items.
@@ -67,13 +64,12 @@ Don't suffix `ReactiveCommand` properties' names with `Command`; instead, name t
 
 ```csharp
 	
-public IReactiveCommand Synchronize { get; private set; }
+public ReactiveCommand Synchronize { get; private set; }
 
 // and then in the ctor:
 
-Synchronize = new ReactiveCommand();
-Synchronize.RegisterAsync(_ => SynchronizeImpl(mergeInsteadOfRebase: !IsAhead))
-    .Subscribe();
+Synchronize = ReactiveCommand.CreateAsyncObservable(
+  _ => SynchronizeImpl(mergeInsteadOfRebase: !IsAhead));
 
 ```
 
@@ -81,22 +77,20 @@ When a `ReactiveCommand`'s implementation is too large or too complex for an ano
 
 ### UI Thread and Schedulers
 
-Always make sure to update the UI on the `RxApp.DeferredScheduler` to ensure UI 
-changes happen on the UI thread. In practice, this typically means making sure 
-to update view models on the deferred scheduler.
+Always make sure to update the UI on the `RxApp.MainThreadScheduler` to ensure UI  changes happen on the UI thread. In practice, this typically means making sure to update view models on the main thread scheduler.
 
 __Do__
 
 ```csharp
-.FetchStuffAsync()
-.ObserveOn(RxApp.DeferredScheduler)
-.Subscribe(x => this.SomeViewModelProperty = x);
+FetchStuffAsync()
+  .ObserveOn(RxApp.MainThreadScheduler)
+  .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 __Don't__
 
 ```csharp
-.FetchStuffAsync()
-.Subscribe(x => this.SomeViewModelProperty = x);
+FetchStuffAsync()
+  .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 
 Even better, pass in the scheduler to methods that take one in.
@@ -104,8 +98,8 @@ Even better, pass in the scheduler to methods that take one in.
 __Better__
 
 ```csharp
-.FetchStuffAsync(RxApp.DeferredScheduler)
-.Subscribe(x => this.SomeViewModelProperty = x);
+FetchStuffAsync(RxApp.MainThreadScheduler)
+  .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 
 ### Prefer Observable Property Helpers to setting properties explicitly
@@ -123,10 +117,9 @@ public class RepositoryViewModel : ViewModelBase
 
   public RepositoryViewModel() 
   {
-    someViewModelProperty = this.WhenAny(x => x.StuffFetched, 
-									 y => y.OtherStuffNotBusy, 
-									 (x, y) => x && y)
-      .ToProperty(this, x => x.CanDoIt, setViaReflection: false);
+    someViewModelProperty = this.WhenAny(x => x.StuffFetched, y => y.OtherStuffNotBusy, 
+	      (x, y) => x && y)
+      .ToProperty(this, x => x.CanDoIt, out canDoIt);
   }
 
   public bool CanDoIt
@@ -139,12 +132,12 @@ public class RepositoryViewModel : ViewModelBase
 __Don't__
 
 ```csharp
-.FetchStuffAsync()
-.ObserveOn(RxApp.DeferredScheduler)
-.Subscribe(x => this.SomeViewModelProperty = x);
+FetchStuffAsync()
+  .ObserveOn(RxApp.DeferredScheduler)
+  .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 
-### Prefer using `this` as the left hand side of a `WhenAny` call.
+### Almost always use `this` as the left hand side of a `WhenAny` call.
 
 __Do__
 
