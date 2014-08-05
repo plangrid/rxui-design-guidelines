@@ -28,7 +28,7 @@ public class RepositoryViewModel : ViewModelBase
   {
     Delete = new ReactiveAsyncCommand();
     Delete.RegisterAsyncObservable(
-      x => Delete(),  
+      x => DeleteImpl(),  
       e => /* Do something with error */)
     .Subscribe();
   }
