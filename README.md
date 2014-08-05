@@ -20,22 +20,22 @@ __Do__
 
 ```csharp
 // In XAML
-<Button Command="{Binding DeleteCommand}" .../>
+<Button Command="{Binding Delete}" .../>
 
 public class RepositoryViewModel : ViewModelBase 
 {
   public RepositoryViewModel() 
   {
-    DeleteCommand = new ReactiveAsyncCommand();
-    DeleteCommand.RegisterAsyncObservable(
+    Delete = new ReactiveAsyncCommand();
+    Delete.RegisterAsyncObservable(
       x => Delete(),  
       e => /* Do something with error */)
     .Subscribe();
   }
 
-  public ReactiveAsyncCommand DeleteCommand { get; private set; }
+  public ReactiveAsyncCommand Delete { get; private set; }
 
-  public IObservable<Unit> Delete() {...}
+  public IObservable<Unit> DeleteImpl() {...}
 }
 ```
 
