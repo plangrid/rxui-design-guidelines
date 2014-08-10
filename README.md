@@ -142,28 +142,31 @@ FetchStuffAsync()
 __Do__
 
 ```csharp
-IDependency dependency;
-public IDependency Dependency
+public class MyViewModel
 {
-  get { return this.dependency; }
-  set { this.RaiseAndSetIfChanged(ref dependency, value); }
-}
+  public MyViewModel(IDependency dependency)
+  {
+    Ensure.ArgumentNotNull(dependency, "dependency");
 
-IObservableAsPropertyHelper<IStuff> stuff;
+    this.Dependency = dependency;
 
-public IStuff Stuff
-{
-  get { return this.stuff.Value; }
-}
+    this.stuff = this.WhenAny(x => x.Dependency.Stuff, x => x.Value)
+      .ToProperty(this, x => x.Stuff);
+  }
 
-public class MyViewModel(IDependency dependency)
-{
-  Ensure.ArgumentNotNull(dependency, "dependency");
-  
-  this.Dependency = dependency;
-  
-  this.stuff = this.WhenAny(x => x.Dependency.Stuff, x => x.Value)
-    .ToProperty(this, x => x.Stuff);
+  readonly IDependency dependency;
+  public IDependency Dependency
+  {
+    get { return this.dependency; }
+    private set { this.RaiseAndSetIfChanged(ref dependency, value); }
+  }
+
+  ObservableAsPropertyHelper<IStuff> stuff;
+
+  public IStuff Stuff
+  {
+    get { return this.stuff.Value; }
+  }
 }
 ```
 
