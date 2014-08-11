@@ -84,13 +84,13 @@ __Do__
 ```csharp
 FetchStuffAsync()
   .ObserveOn(RxApp.MainThreadScheduler)
-  .Subscribe();
+  .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 __Don't__
 
 ```csharp
 FetchStuffAsync()
-  .Subscribe();
+  .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 
 Even better, pass the scheduler to the asynchronous operation - this is often
