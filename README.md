@@ -137,6 +137,13 @@ FetchStuffAsync()
   .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 
+#### Why?
+
+ - ObservableAsPropertyHelper will use `MainThreadScheduler` to schedule changes,
+  unless specified otherwise - no need to remember to do this yourself.
+ - `WhenAny` lets you combine multiple properties, treat their changes as observable
+  streams, and craft ViewModel-specific outputs with very little boilerplate code.
+
 ### Almost always use `this` as the left hand side of a `WhenAny` call.
 
 __Do__
