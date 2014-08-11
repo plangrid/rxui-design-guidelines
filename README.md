@@ -186,3 +186,7 @@ public class MyViewModel(IDependency dependency)
     .ToProperty(this, x => x.Stuff);
 }
 ```
+#### Why?
+
+ - the lifetime of `dependency` is unknown - if it is a singleton it
+ could introduce memory leaks into your application
