@@ -93,7 +93,8 @@ FetchStuffAsync()
   .Subscribe();
 ```
 
-Even better, pass in the scheduler to methods that take one in.
+Even better, pass the scheduler to the asynchronous operation - this is often
+necessary for more complex tasks.
 
 __Better__
 
