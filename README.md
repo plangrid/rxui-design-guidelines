@@ -139,10 +139,13 @@ FetchStuffAsync()
 
 #### Why?
 
- - ObservableAsPropertyHelper will use `MainThreadScheduler` to schedule changes,
+ - `ObservableAsPropertyHelper` will take care of raising `INotifyPropertyChanged`
+   events - if you're creating read-only properties, this can save so much boilerplate
+   code.
+ - `ObservableAsPropertyHelper` will use `MainThreadScheduler` to schedule subscribers,
   unless specified otherwise - no need to remember to do this yourself.
  - `WhenAny` lets you combine multiple properties, treat their changes as observable
-  streams, and craft ViewModel-specific outputs with very little boilerplate code.
+  streams, and craft ViewModel-specific outputs.
 
 ### Almost always use `this` as the left hand side of a `WhenAny` call.
 
@@ -186,6 +189,7 @@ public class MyViewModel(IDependency dependency)
     .ToProperty(this, x => x.Stuff);
 }
 ```
+
 #### Why?
 
  - the lifetime of `dependency` is unknown - if it is a singleton it
