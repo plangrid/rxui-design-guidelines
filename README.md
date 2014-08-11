@@ -133,7 +133,7 @@ __Don't__
 
 ```csharp
 FetchStuffAsync()
-  .ObserveOn(RxApp.DeferredScheduler)
+  .ObserveOn(RxApp.MainThreadScheduler)
   .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 
