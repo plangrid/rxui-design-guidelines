@@ -22,7 +22,7 @@ __Do__
 // In XAML
 <Button Command="{Binding Delete}" .../>
 
-public class RepositoryViewModel : ViewModelBase 
+public class RepositoryViewModel : ReactiveObject
 {
   public RepositoryViewModel() 
   {
@@ -84,13 +84,13 @@ __Do__
 ```csharp
 FetchStuffAsync()
   .ObserveOn(RxApp.MainThreadScheduler)
-  .Subscribe(x => this.SomeViewModelProperty = x);
+  .Subscribe();
 ```
 __Don't__
 
 ```csharp
 FetchStuffAsync()
-  .Subscribe(x => this.SomeViewModelProperty = x);
+  .Subscribe();
 ```
 
 Even better, pass in the scheduler to methods that take one in.
@@ -111,17 +111,16 @@ observable stream, rather than set the value explicitly, use
 __Do__
 
 ```csharp
-public class RepositoryViewModel : ViewModelBase 
+public class RepositoryViewModel : ReactiveObject
 {
-  ObservableAsPropertyHelper<bool> canDoIt;
-
-  public RepositoryViewModel() 
+  public RepositoryViewModel()
   {
     someViewModelProperty = this.WhenAny(x => x.StuffFetched, y => y.OtherStuffNotBusy, 
 	      (x, y) => x && y)
       .ToProperty(this, x => x.CanDoIt, out canDoIt);
   }
 
+  readonly ObservableAsPropertyHelper<bool> canDoIt;
   public bool CanDoIt
   {
     get { return canDoIt.Value; }  
@@ -171,8 +170,7 @@ public class MyViewModel
     private set { this.RaiseAndSetIfChanged(ref dependency, value); }
   }
 
-  ObservableAsPropertyHelper<IStuff> stuff;
-
+  readonly ObservableAsPropertyHelper<IStuff> stuff;
   public IStuff Stuff
   {
     get { return this.stuff.Value; }
