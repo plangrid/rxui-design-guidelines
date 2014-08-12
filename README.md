@@ -164,12 +164,7 @@ public class MyViewModel
       .ToProperty(this, x => x.Stuff);
   }
 
-  readonly IDependency dependency;
-  public IDependency Dependency
-  {
-    get { return this.dependency; }
-    private set { this.RaiseAndSetIfChanged(ref dependency, value); }
-  }
+  public IDependency Dependency { get; private set; }
 
   readonly ObservableAsPropertyHelper<IStuff> stuff;
   public IStuff Stuff
