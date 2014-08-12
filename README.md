@@ -22,7 +22,7 @@ __Do__
 // In XAML
 <Button Command="{Binding Delete}" .../>
 
-public class RepositoryViewModel : ViewModelBase 
+public class RepositoryViewModel : ReactiveObject
 {
   public RepositoryViewModel() 
   {
@@ -93,7 +93,8 @@ FetchStuffAsync()
   .Subscribe(x => this.SomeViewModelProperty = x);
 ```
 
-Even better, pass in the scheduler to methods that take one in.
+Even better, pass the scheduler to the asynchronous operation - this is often
+necessary for more complex tasks.
 
 __Better__
 
@@ -111,17 +112,16 @@ observable stream, rather than set the value explicitly, use
 __Do__
 
 ```csharp
-public class RepositoryViewModel : ViewModelBase 
+public class RepositoryViewModel : ReactiveObject
 {
-  ObservableAsPropertyHelper<bool> canDoIt;
-
-  public RepositoryViewModel() 
+  public RepositoryViewModel()
   {
     someViewModelProperty = this.WhenAny(x => x.StuffFetched, y => y.OtherStuffNotBusy, 
 	      (x, y) => x && y)
       .ToProperty(this, x => x.CanDoIt, out canDoIt);
   }
 
+  readonly ObservableAsPropertyHelper<bool> canDoIt;
   public bool CanDoIt
   {
     get { return canDoIt.Value; }  
@@ -133,37 +133,44 @@ __Don't__
 
 ```csharp
 FetchStuffAsync()
-  .ObserveOn(RxApp.DeferredScheduler)
+  .ObserveOn(RxApp.MainThreadScheduler)
   .Subscribe(x => this.SomeViewModelProperty = x);
 ```
+
+#### Why?
+
+ - `ObservableAsPropertyHelper` will take care of raising `INotifyPropertyChanged`
+   events - if you're creating read-only properties, this can save so much boilerplate
+   code.
+ - `ObservableAsPropertyHelper` will use `MainThreadScheduler` to schedule subscribers,
+  unless specified otherwise - no need to remember to do this yourself.
+ - `WhenAny` lets you combine multiple properties, treat their changes as observable
+  streams, and craft ViewModel-specific outputs.
 
 ### Almost always use `this` as the left hand side of a `WhenAny` call.
 
 __Do__
 
 ```csharp
-IDependency dependency;
-public IDependency Dependency
+public class MyViewModel
 {
-  get { return this.dependency; }
-  set { this.RaiseAndSetIfChanged(ref dependency, value); }
-}
+  public MyViewModel(IDependency dependency)
+  {
+    Ensure.ArgumentNotNull(dependency, "dependency");
 
-IObservableAsPropertyHelper<IStuff> stuff;
+    this.Dependency = dependency;
 
-public IStuff Stuff
-{
-  get { return this.stuff.Value; }
-}
+    this.stuff = this.WhenAny(x => x.Dependency.Stuff, x => x.Value)
+      .ToProperty(this, x => x.Stuff);
+  }
 
-public class MyViewModel(IDependency dependency)
-{
-  Ensure.ArgumentNotNull(dependency, "dependency");
-  
-  this.Dependency = dependency;
-  
-  this.stuff = this.WhenAny(x => x.Dependency.Stuff, x => x.Value)
-    .ToProperty(this, x => x.Stuff);
+  public IDependency Dependency { get; private set; }
+
+  readonly ObservableAsPropertyHelper<IStuff> stuff;
+  public IStuff Stuff
+  {
+    get { return this.stuff.Value; }
+  }
 }
 ```
 
@@ -176,3 +183,8 @@ public class MyViewModel(IDependency dependency)
     .ToProperty(this, x => x.Stuff);
 }
 ```
+
+#### Why?
+
+ - the lifetime of `dependency` is unknown - if it is a singleton it
+ could introduce memory leaks into your application
