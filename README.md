@@ -188,3 +188,45 @@ public class MyViewModel(IDependency dependency)
 
  - the lifetime of `dependency` is unknown - if it is a singleton it
  could introduce memory leaks into your application
+
+### Use descriptive variables in your `WhenAny`s
+
+In situations where you are detecting changes in multiple expressions, ensure you name the variables in the `selector` 
+
+```csharp
+public class MyViewModel : ReactiveObject
+{
+  public MyViewModel()
+  {
+    this.WhenAny(
+        x => x.SomeProperty.IsEnabled,
+        x => x.SomeProperty.IsLoading,
+        (isEnabled, isLoading) => isEnabled.Value && isLoading.Value)
+        .Subscribe(_ => DoSomething());
+  }
+  
+  // other code here
+}
+```
+
+__Don't__
+
+```csharp
+public class MyViewModel : ReactiveObject
+{
+  public MyViewModel()
+  {
+    this.WhenAny(
+        x => x.SomeProperty.IsEnabled,
+        x => x.SomeProperty.IsLoading,
+        (x, y) => x.Value && y.Value)
+        .Subscribe(_ => DoSomething());
+  }
+  
+  // other code here
+}
+```
+
+#### Why?
+
+This helps greatly with the readability of complex expressions, particularly when working with boolean values.
