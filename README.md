@@ -116,9 +116,8 @@ public class RepositoryViewModel : ReactiveObject
 {
   public RepositoryViewModel()
   {
-    someViewModelProperty = this.WhenAny(x => x.StuffFetched, y => y.OtherStuffNotBusy, 
-	      (x, y) => x && y)
-      .ToProperty(this, x => x.CanDoIt, out canDoIt);
+    canDoIt = this.WhenAny(x => x.StuffFetched, y => y.OtherStuffNotBusy, (x, y) => x && y)
+      .ToProperty(this, x => x.CanDoIt);
   }
 
   readonly ObservableAsPropertyHelper<bool> canDoIt;
@@ -132,9 +131,9 @@ public class RepositoryViewModel : ReactiveObject
 __Don't__
 
 ```csharp
-FetchStuffAsync()
+this.WhenAny(x => x.StuffFetched, y => y.OtherStuffNotBusy, (x, y) => x && y)
   .ObserveOn(RxApp.MainThreadScheduler)
-  .Subscribe(x => this.SomeViewModelProperty = x);
+  .Subscribe(x => CanDoIt = x);
 ```
 
 #### Why?
