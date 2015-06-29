@@ -57,6 +57,33 @@ enable applications to introduce additional behaviour.
 2. It handles marshaling the result back to the UI thread.
 3. It tracks in-flight items.
 
+#### Don't invoke commands in ViewModel Constructors  
+__Do__
+```csharp
+// ViewModel Constructor
+public ViewModel()
+{
+    PerformSearchCommand = ReactiveCommand.CreateAsyncTask([...]);
+}
+
+// View Constructor
+public View()
+{
+    this.WhenAnyValue(x => x.ViewModel)
+        .InvokeCommand(this, x => x.ViewModel.PerformSearchCommand);
+}
+```
+__Don't__
+```csharp
+public ViewModel()
+{
+    PerformSearchCommand = ReactiveCommand.CreateAsyncTask([...]);
+    PerformSearchCommand.Execute(null); // begin executing immediately
+}
+```
+Why?  
+When testing the ViewModel you will need to be able to test the before and after command execution state.
+
 
 #### Command Names
 
@@ -95,6 +122,12 @@ FetchStuffAsync()
 
 Even better, pass the scheduler to the asynchronous operation - this is often
 necessary for more complex tasks.
+
+#### Pass ReactiveUI Schedulers  
+Make sure to pass one of the ReactiveUI schedulers (`RxApp.MainThreadScheduler` or `RxApp.TaskPoolScheduler`) to ReativeExtensions methods that accept one (`.Throttle` and `.Sample`).  
+
+Why?  
+You will be able to use ReactiveUI's `TestScheduler` in your unit tests
 
 __Better__
 
@@ -229,3 +262,34 @@ public class MyViewModel : ReactiveObject
 #### Why?
 
 This helps greatly with the readability of complex expressions, particularly when working with boolean values.
+
+
+### ReactiveLists
+Prefer initalizing the list only once (in the constructor) and modifying the contents of that list rather than replacing it.
+
+__Do__
+```csharp
+public ViewModel()
+{
+    Versions = new ReactiveList<SheetViewModel>();
+    
+    ReactiveCommand<SheetViewModel> UpdateVersions = ReactiveCommand.CreateAsyncTask(UpdateVersionsImpl);
+    UpdateVersions
+      .Subscribe(versions =>
+        {
+          Versions.AddRange(versions);
+        });
+}
+```
+
+__Don't__
+```csharp
+public ViewModel()
+{
+    ReactiveCommand<SheetViewModel> UpdateVersions = ReactiveCommand.CreateAsyncTask(UpdateVersionsImpl);
+    UpdateVersions.Select(x => new ReactiveList(x)).ToProperty(this, x => Versions); 
+}
+```
+
+Why?
+You are probably using a ReactiveList because you care about the contents of the list ... Your life will be easier if you don't have to check if the ReactiveList changed to a new ReactiveList (e.g. `this.WhenAnyValue(x => x.MyList)`) AND the thing you actually care about happened (e.g. `MyList.ItemsAdded`). Also, when the ReactiveList changes it will be hard/impossible to derive if any of the changes you care about have also happened (Changed, ItemsAdded, ItemsRemoved, etc).
