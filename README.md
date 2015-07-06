@@ -4,6 +4,14 @@ RxUI Design Guidelines
 A set of practices to help maintain sanity when building an RxUI client 
 application distilled from hard lessons learned.
 
+## Resources  
+* [Read the docs](http://reactiveui.readthedocs.org/en/latest/) 
+  * Has good documentation on everything they have gotten to... unfortunatly they have not gotten to everything.
+* [Read the source](https://github.com/reactiveui/ReactiveUI)
+  * Aside from actually reading the code, often there will be some good information in the comments.
+* [Interactive diagrams of Rx Observables](http://rxmarbles.com/) 
+  * A visual and interactive way to learn observable operations (merge, concat, zip)
+
 ## Best Practices
 
 The following recommendations are intended to help keep ReactiveUI code 
@@ -191,18 +199,18 @@ FetchStuffAsync()
 Even better, pass the scheduler to the asynchronous operation - this is often
 necessary for more complex tasks.
 
-#### Pass ReactiveUI Schedulers  
-Make sure to pass one of the ReactiveUI schedulers (`RxApp.MainThreadScheduler` or `RxApp.TaskPoolScheduler`) to ReativeExtensions methods that accept one (`.Throttle` and `.Sample`).  
-
-Why?  
-You will be able to use ReactiveUI's `TestScheduler` in your unit tests
-
 __Better__
 
 ```csharp
 FetchStuffAsync(RxApp.MainThreadScheduler)
   .Subscribe(x => this.SomeViewModelProperty = x);
 ```
+
+#### Pass ReactiveUI Schedulers  
+Make sure to pass one of the ReactiveUI schedulers (`RxApp.MainThreadScheduler` or `RxApp.TaskPoolScheduler`) to ReativeExtensions methods that accept one (`.Throttle` and `.Sample`).  
+
+Why?  
+You will be able to use ReactiveUI's `TestScheduler` in your unit tests
 
 ### Prefer Observable Property Helpers to setting properties explicitly
 
